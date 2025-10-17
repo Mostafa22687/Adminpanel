@@ -1,0 +1,313 @@
+--[[
+ADMIN PANEL (DELTA VERSION V4)
+حقوق: ABO-ALSOF & XR2SCRIPTS
+تحديث كامل بكل الخواص
+--]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+if LocalPlayer.PlayerGui:FindFirstChild("AdminPanelGUI") then
+	LocalPlayer.PlayerGui.AdminPanelGUI:Destroy()
+end
+
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "AdminPanelGUI"
+gui.ResetOnSpawn = false
+
+-- زر AP (مربع بزوايا ناعمة)
+local ap = Instance.new("TextButton")
+ap.Size = UDim2.new(0,55,0,55)
+ap.Position = UDim2.new(0,12,0,15)
+ap.BackgroundColor3 = Color3.fromRGB(25,25,25)
+ap.BackgroundTransparency = 0.35
+ap.Text = "AP"
+ap.TextColor3 = Color3.new(1,1,1)
+ap.Font = Enum.Font.GothamBold
+ap.TextSize = 22
+ap.Parent = gui
+ap.AutoButtonColor = false
+local apCorner = Instance.new("UICorner", ap)
+apCorner.CornerRadius = UDim.new(0.25,0) -- مربع بزوايا ناعمة فقط
+
+-- اللوحة الرئيسية
+local panel = Instance.new("Frame", gui)
+panel.Size = UDim2.new(0,500,0,400)
+panel.Position = UDim2.new(0.5,-250,0.5,-200)
+panel.BackgroundColor3 = Color3.fromRGB(0,0,0)
+panel.BackgroundTransparency = 0.45
+panel.Visible = false
+Instance.new("UICorner", panel).CornerRadius = UDim.new(0.08,0)
+
+-- العنوان
+local title = Instance.new("TextLabel", panel)
+title.Size = UDim2.new(1,0,0,35)
+title.BackgroundTransparency = 1
+title.Text = "ADMIN PANEL"
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+
+-- الحقوق تحت العنوان
+local rights = Instance.new("TextLabel", panel)
+rights.Size = UDim2.new(1,0,0,25)
+rights.Position = UDim2.new(0,0,0,30)
+rights.BackgroundTransparency = 1
+rights.Text = "حقوق ABO-ALSOF & XR2SCRIPTS"
+rights.TextColor3 = Color3.new(1,1,1)
+rights.Font = Enum.Font.Gotham
+rights.TextSize = 14
+
+-- الشبكة للأزرار
+local container = Instance.new("Frame", panel)
+container.Size = UDim2.new(1,0,1,-65)
+container.Position = UDim2.new(0,0,0,60)
+container.BackgroundTransparency = 1
+local grid = Instance.new("UIGridLayout", container)
+grid.CellSize = UDim2.new(0,150,0,45)
+grid.CellPadding = UDim2.new(0,10,0,10)
+grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+grid.VerticalAlignment = Enum.VerticalAlignment.Center
+
+-- دوال عامة
+local function createBtn(name)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(0,150,0,45)
+	b.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.Text = name .. " [OFF]"
+	b.Font = Enum.Font.Gotham
+	b.TextSize = 16
+	b.AutoButtonColor = false
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0.2,0)
+	b.Parent = container
+	return b
+end
+
+local function toggleVisual(b, state)
+	b.BackgroundColor3 = state and Color3.fromRGB(0,120,60) or Color3.fromRGB(120,30,30)
+	b.Text = b.Name .. (state and " [ON]" or " [OFF]")
+end
+
+local State = {}
+
+-- 🟢 1. Rainbow Body
+local rb = createBtn("Rainbow Body") rb.Name = "Rainbow Body"
+local rbConn
+rb.MouseButton1Click:Connect(function()
+	State.rb = not State.rb
+	toggleVisual(rb, State.rb)
+	if State.rb then
+		local t = 0
+		rbConn = RunService.Heartbeat:Connect(function(dt)
+			t += dt*0.5
+			local c = Color3.fromHSV(t%1,1,1)
+			for _,p in pairs(LocalPlayer.Character:GetDescendants()) do
+				if p:IsA("BasePart") then p.Color = c end
+			end
+		end)
+	else
+		if rbConn then rbConn:Disconnect() end
+		for _,p in pairs(LocalPlayer.Character:GetDescendants()) do
+			if p:IsA("BasePart") then p.Color = Color3.fromRGB(255,255,255) end
+		end
+	end
+end)
+
+-- 🌈 2. Rainbow Map (مع رجوع الألوان)
+local mapBtn = createBtn("Rainbow Map") mapBtn.Name = "Rainbow Map"
+local mapConn
+local originalColors = {}
+mapBtn.MouseButton1Click:Connect(function()
+	State.map = not State.map
+	toggleVisual(mapBtn, State.map)
+	if State.map then
+		originalColors = {}
+		for _,v in pairs(workspace:GetDescendants()) do
+			if v:IsA("BasePart") and not v:IsDescendantOf(LocalPlayer.Character) then
+				originalColors[v] = v.Color
+			end
+		end
+		local t = 0
+		mapConn = RunService.Heartbeat:Connect(function(dt)
+			t += dt*0.3
+			local c = Color3.fromHSV(t%1,0.9,0.9)
+			for _,v in pairs(workspace:GetDescendants()) do
+				if v:IsA("BasePart") and not v:IsDescendantOf(LocalPlayer.Character) then
+					v.Color = c
+				end
+			end
+		end)
+	else
+		if mapConn then mapConn:Disconnect() end
+		for v,c in pairs(originalColors) do
+			if v and v:IsA("BasePart") then v.Color = c end
+		end
+	end
+end)
+
+-- 🌫️ 3. Transparent World
+local transBtn = createBtn("Transparent World") transBtn.Name = "Transparent World"
+transBtn.MouseButton1Click:Connect(function()
+	State.trans = not State.trans
+	toggleVisual(transBtn, State.trans)
+	for _,v in pairs(workspace:GetDescendants()) do
+		if v:IsA("BasePart") and not v:IsDescendantOf(LocalPlayer.Character) then
+			v.Transparency = State.trans and 0.5 or 0
+		end
+	end
+end)
+
+-- 🧱 4. Block Builder
+local blockBtn = createBtn("Block Builder") blockBtn.Name = "Block Builder"
+local followPart, followConn
+local colors = {Color3.fromRGB(255,0,0),Color3.fromRGB(255,165,0),Color3.fromRGB(0,255,0),Color3.fromRGB(0,255,255),Color3.fromRGB(255,0,255)}
+local colorI = 1
+blockBtn.MouseButton1Click:Connect(function()
+	State.block = not State.block
+	toggleVisual(blockBtn, State.block)
+	if State.block then
+		followPart = Instance.new("Part", workspace)
+		followPart.Size = Vector3.new(2,2,2)
+		followPart.Anchored = true
+		followPart.Transparency = 0.3
+		followConn = RunService.Heartbeat:Connect(function()
+			local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then followPart.Position = hrp.Position + hrp.CFrame.LookVector*5 end
+		end)
+	else
+		if followConn then followConn:Disconnect() end
+		if followPart then followPart:Destroy() end
+	end
+end)
+Mouse.Button1Down:Connect(function()
+	if State.block and followPart then
+		colorI = (colorI % #colors) + 1
+		local b = Instance.new("Part", workspace)
+		b.Size = Vector3.new(2,2,2)
+		b.Anchored = true
+		b.Color = colors[colorI]
+		b.Position = followPart.Position
+	end
+end)
+
+-- 🦘 5. Jump Boost
+local jumpBtn = createBtn("Jump Boost") jumpBtn.Name = "Jump Boost"
+jumpBtn.MouseButton1Click:Connect(function()
+	State.jump = not State.jump
+	toggleVisual(jumpBtn, State.jump)
+	local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.UseJumpPower = true
+		hum.JumpPower = State.jump and 150 or 50
+	end
+end)
+
+-- 🏃 6. WalkSpeed
+local wsBtn = createBtn("WalkSpeed") wsBtn.Name = "WalkSpeed"
+wsBtn.MouseButton1Click:Connect(function()
+	State.ws = not State.ws
+	toggleVisual(wsBtn, State.ws)
+	local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+	if hum then hum.WalkSpeed = State.ws and 32 or 16 end
+end)
+
+-- 👁️ 7. ESP (Names + Highlight)
+local espBtn = createBtn("ESP") espBtn.Name = "ESP"
+local espOn = false
+local espObjects = {}
+espBtn.MouseButton1Click:Connect(function()
+	espOn = not espOn
+	toggleVisual(espBtn, espOn)
+	if espOn then
+		for _,p in pairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				local h = Instance.new("Highlight", p.Character)
+				h.FillColor = Color3.fromRGB(0,255,0)
+				h.OutlineColor = Color3.fromRGB(255,255,255)
+				local gui = Instance.new("BillboardGui", gui)
+				gui.Adornee = p.Character.HumanoidRootPart
+				gui.Size = UDim2.new(0,100,0,20)
+				gui.AlwaysOnTop = true
+				local txt = Instance.new("TextLabel", gui)
+				txt.Size = UDim2.new(1,0,1,0)
+				txt.BackgroundTransparency = 0.5
+				txt.BackgroundColor3 = Color3.fromRGB(0,0,0)
+				txt.TextColor3 = Color3.new(1,1,1)
+				txt.Text = p.Name
+				txt.Font = Enum.Font.GothamBold
+				txt.TextSize = 14
+				espObjects[p] = {h,gui}
+			end
+		end
+	else
+		for _,objs in pairs(espObjects) do
+			if objs[1] then objs[1]:Destroy() end
+			if objs[2] then objs[2]:Destroy() end
+		end
+		espObjects = {}
+	end
+end)
+
+-- ⚡ 8. TP Tool
+local tpBtn = createBtn("TP Tool") tpBtn.Name = "TP Tool"
+local tpOn = false
+tpBtn.MouseButton1Click:Connect(function()
+	tpOn = not tpOn
+	toggleVisual(tpBtn, tpOn)
+end)
+Mouse.Button1Down:Connect(function()
+	if tpOn and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+		LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Mouse.Hit.p + Vector3.new(0,3,0))
+	end
+end)
+
+-- 👻 9. Invisible
+local invBtn = createBtn("Invisible") invBtn.Name = "Invisible"
+invBtn.MouseButton1Click:Connect(function()
+	State.inv = not State.inv
+	toggleVisual(invBtn, State.inv)
+	for _,p in pairs(LocalPlayer.Character:GetDescendants()) do
+		if p:IsA("BasePart") then
+			p.Transparency = State.inv and 1 or 0
+		end
+	end
+end)
+
+-- 🚷 10. Noclip
+local noclipBtn = createBtn("Noclip") noclipBtn.Name = "Noclip"
+local ncConn
+noclipBtn.MouseButton1Click:Connect(function()
+	State.noclip = not State.noclip
+	toggleVisual(noclipBtn, State.noclip)
+	if State.noclip then
+		ncConn = RunService.Stepped:Connect(function()
+			local ch = LocalPlayer.Character
+			if ch then
+				for _,p in pairs(ch:GetDescendants()) do
+					if p:IsA("BasePart") then p.CanCollide = false end
+				end
+			end
+		end)
+	else
+		if ncConn then ncConn:Disconnect() end
+	end
+end)
+
+-- 🔁 11. Reset Char
+local resetBtn = createBtn("Reset Char") resetBtn.Name = "Reset Char"
+resetBtn.MouseButton1Click:Connect(function()
+	toggleVisual(resetBtn,true)
+	task.wait(0.15)
+	if LocalPlayer.Character then
+		LocalPlayer.Character:BreakJoints()
+	end
+	toggleVisual(resetBtn,false)
+end)
+
+-- إظهار / إخفاء اللوحة
+ap.MouseButton1Click:Connect(function()
+	panel.Visible = not panel.Visible
+end)
